@@ -5,7 +5,7 @@ class GeminiAgent:
     def __init__(self):
         api_key = os.getenv("GEMINI_API_KEY")
         genai.configure(api_key=api_key)
-        self.model = genai.GenerativeModel("gemini-2.5-pro")
+        self.model = genai.GenerativeModel("gemini-2.5-flash")
 
     async def summarize(self, text: str) -> str:
         prompt = f"Summarize the following text:\n\n{text}"
