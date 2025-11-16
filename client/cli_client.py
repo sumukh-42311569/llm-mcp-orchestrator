@@ -5,7 +5,7 @@ BASE_URL = "http://127.0.0.1:8000"
 def main():
     print("=== MCP Client ===")
     while True:
-        task_type = input("Enter task (summarize/explain_code/generate_code/enhance_text/reason or 'q' to quit): ")
+        task_type = input("Enter task (summarize/explain_code/generate_code/enhance_text/reason/rewrite/QA or 'q' to quit): ")
         if task_type.lower() == "q":
             break
 
