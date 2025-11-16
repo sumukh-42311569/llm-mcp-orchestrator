@@ -2,6 +2,7 @@ from fastapi import FastAPI
 from pydantic import BaseModel
 from agents.gemini_agent import GeminiAgent
 from agents.groq_agent import GroqAgent
+from agents.cerebras_agent import CerebrasAgent
 from agents.local_llm_agent import LocalLLMGeneratedAgent
 from hub.context_store import ContextStore
 
@@ -9,6 +10,7 @@ app = FastAPI(title="MCP Relay Hub")
 
 gemini_agent = GeminiAgent()
 groq_agent = GroqAgent()
+cerberas_agent = CerebrasAgent()
 local_agent = LocalLLMGeneratedAgent()
 context_store = ContextStore()
 
@@ -37,6 +39,15 @@ async def process_task(request: TaskRequest):
     elif request.task_type == "reason":
         agent = "local_llm"
         result = await local_agent.general_reasoning(request.content)
+
+    elif request.task_type == "rewrite":
+        agent = "cerberas"
+        result = await cerberas_agent.rewrite(request.content)
+
+    elif request.task_type == "qa":
+        agent = "cerberas"
+        result = await cerberas_agent.answer_question(request.content)
+
     else:
         result = "Unknown task type."
         return {"result": result}
