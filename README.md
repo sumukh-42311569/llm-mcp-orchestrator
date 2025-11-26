@@ -43,3 +43,32 @@ llm-mcp-orchestrator/
 ├── results/                       # Sample outputs
 │   └── sample_result.txt
 ```
+
+## Running the project
+### Prerequisites
+1. Python
+2. API keys for Cerebras and Groq
+3. Locally installed Ollama
+
+### Commands
+1. Create virtual env
+```bash
+python3 -m venv venv
+source venv/bin/activate 
+```
+
+2. Install dependencies
+```bash
+pip install -r requirements.txt
+```
+
+3. Set environment variables
+```bash
+export CEREBRAS_API_KEY="cerebras_api_key"
+export GROQ_API_KEY="groq_api_key"
+```
+
+4. Run the client
+```bash
+python3 client/cli_client.py "Task description"
+```
