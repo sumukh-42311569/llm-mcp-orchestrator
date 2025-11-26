@@ -8,3 +8,38 @@ This project proposes and demonstrates a multi-agent collaboration framework bui
 
 ## Expected Outcome:
 The project will result in a hybrid multi-agent MCP framework capable of orchestrating tasks across multiple AI agents regardless of their underlying model architecture or hosting environment, demonstrating interoperability, efficiency and context-sharing.
+
+## Project structure
+```
+llm-mcp-orchestrator/
+│
+├── README.md   
+├── requirements.txt               # Python dependencies
+│
+├── agents/                        # AI agent implementations
+│   ├── __init__.py
+│   ├── planner_agent.py          
+│   ├── executor_agent.py        
+│   ├── cerebras_agent.py        
+│   ├── groq_agent.py            
+│   ├── local_llm_agent.py       
+│   └── gemini_agent.py          
+│
+├── llm_clients/                   # Low-level LLM API clients
+│   ├── cerebras_client.py       
+│   ├── groq_client.py           
+│   └── local_llm_client.py      
+│
+├── hub/                           # MCP relay hub
+│   ├── __init__.py
+│   ├── __main__.py               
+│   ├── hub_server.py             # MCP server 
+│   └── context_store.py          
+│
+├── client/                        # Client implementations
+│   ├── __init__.py
+│   └── cli_client.py             
+│
+├── results/                       # Sample outputs
+│   └── sample_result.txt
+```
