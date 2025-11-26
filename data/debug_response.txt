@@ -1,0 +1,60 @@
+Raw response:
+{
+  "plan": [
+    {
+      "step_index": 1,
+      "action": "summarize",
+      "agent": "local",
+      "input": "Write a Python function to sort a list"
+    },
+    {
+      "step_index": 2,
+      "action": "generate_code",
+      "agent": "groq",
+      "input": "create a Python function that takes a list as input and returns a sorted list"
+    },
+    {
+      "step_index": 3,
+      "action": "explain_code",
+      "agent": "cerebras",
+      "input": "provide a detailed explanation of the generated Python function to sort a list"
+    },
+    {
+      "step_index": 4,
+      "action": "test_code",
+      "agent": "local",
+      "input": "test the generated Python function to ensure it correctly sorts a list"
+    }
+  ]
+}
+
+Extracted JSON:
+{
+  "plan": [
+    {
+      "step_index": 1,
+      "action": "summarize",
+      "agent": "local",
+      "input": "Write a Python function to sort a list"
+    },
+    {
+      "step_index": 2,
+      "action": "generate_code",
+      "agent": "groq",
+      "input": "create a Python function that takes a list as input and returns a sorted list"
+    },
+    {
+      "step_index": 3,
+      "action": "explain_code",
+      "agent": "cerebras",
+      "input": "provide a detailed explanation of the generated Python function to sort a list"
+    },
+    {
+      "step_index": 4,
+      "action": "test_code",
+      "agent": "local",
+      "input": "test the generated Python function to ensure it correctly sorts a list"
+    }
+  ]
+}
+

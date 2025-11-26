@@ -45,10 +45,7 @@ class LocalLLMGeneratedAgent:
             return " ".join(pieces)
         
         # if parsing didn't work, just dump the json
-        try:
-            return json.dumps(response, ensure_ascii=False)
-        except Exception:
-            return str(response)
+        return json.dumps(response, ensure_ascii=False)
 
     async def run(self, prompt):
         response = await self.client.generate(prompt)

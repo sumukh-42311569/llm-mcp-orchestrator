@@ -19,6 +19,7 @@ class ExecutorAgent:
         plan_json = plan["plan_json"]
         steps = plan_json.get("plan") if isinstance(plan_json, dict) else plan_json
         results = []
+        context_history = []  # Store outputs from previous steps
 
         for s in steps:
             idx = s.get("step_index", 0)
@@ -39,24 +40,32 @@ class ExecutorAgent:
                 prompt = payload
             else:
                 prompt = json.dumps(payload, ensure_ascii=False)
+            
+            # Add context from previous steps
+            if context_history:
+                context_text = "\n\n--- Context from previous steps ---\n"
+                for i, prev_result in enumerate(context_history, 1):
+                    context_text += f"\nStep {i} ({prev_result['agent']}):\n{prev_result['output'][:500]}\n"
+                prompt = context_text + "\n--- Your task ---\n" + prompt
 
             start = time.time()
             response = await agents[agent_name].run(prompt)
             duration = time.time() - start
-            response_str = ""
+            
             if not isinstance(response, str):
-                try:
-                    response_str = json.dumps(response)
-                except:
-                    response_str= str(response)
+                response_str = json.dumps(response)
             else:
                 response_str = response
-            if(response_str == "") :
-                print("!! No response from agent")
-                exit()
+                
+            if not response_str:
+                raise ValueError(f"Empty response from agent {agent_name}")
             
-            # Update the conteyt store
+            # Update the context store
             self.store.update_step_result(step_id, {"output": response_str, "duration": duration}, "success")
-            results.append({"step": idx, "agent": agent_name, "status": "success", "output": response_str})
+            
+            result = {"step": idx, "agent": agent_name, "status": "success", "output": response_str}
+            results.append(result)
+            context_history.append(result)  # Add to context for next steps
+            
         aggregated = "\n\n".join(r.get("output", r.get("error", "")) for r in results)
         return {"plan_id": planID, "results": results, "aggregated": aggregated}
