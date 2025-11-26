@@ -7,10 +7,12 @@ class GroqClient:
         api_key = os.getenv("GROQ_API_KEY")
         if not api_key:
             raise ValueError("GROQ_API_KEY not found in environment variables")
-        self.url="https://api.groq.com/openai/v1/chat/completions"
+        self.api_key = api_key
+        self.url = "https://api.groq.com/openai/v1/chat/completions"
+        self._timeout = 300
 
     async def generate(self, messages, model="llama-3.1-8b-instant", temperature=0.6, max_tokens=512):
-        headers={"Authorization": f"Bearer {self.api_key}", "Content-Type": "application/json"}
+        headers = {"Authorization": f"Bearer {self.api_key}", "Content-Type": "application/json"}
         payload = {"model": model, "messages": messages, "temperature": temperature, "max_tokens": max_tokens}
 
         async with httpx.AsyncClient(timeout=self._timeout) as client:
