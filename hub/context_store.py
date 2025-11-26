@@ -1,45 +1,117 @@
-from sqlalchemy import create_engine, Column, Integer, String, Text, DateTime, select
-from sqlalchemy.orm import declarative_base, sessionmaker
+import sqlalchemy as sqlch
+import sqlalchemy.orm as sqlorm
 from datetime import datetime
 import json
+import os
 
-Base = declarative_base()
+Base = sqlorm.declarative_base()
 
-class TaskRecord(Base):
-    __tablename__ = "task_records"
+class PlanRecord(Base):
+    __tablename__ = "plans"
+    id = sqlch.Column(sqlch.Integer, primary_key=True, autoincrement=True)
+    input_text = sqlch.Column(sqlch.Text)
+    plan_json = sqlch.Column(sqlch.Text)  
+    meta_data = sqlch.Column(sqlch.Text)  
+    created_at = sqlch.Column(sqlch.DateTime, default=datetime.utcnow)
 
-    id = Column(Integer, primary_key=True, autoincrement=True)
-    task_type = Column(String(50))
-    input_content = Column(Text)
-    agent_used = Column(String(50))
-    output_content = Column(Text)
-    metadata_json = Column(Text)
-    timestamp = Column(DateTime, default=datetime.utcnow)
+class StepRecord(Base):
+    __tablename__ = "steps"
+    id = sqlch.Column(sqlch.Integer, primary_key=True, autoincrement=True)
+    plan_id = sqlch.Column(sqlch.Integer, sqlch.ForeignKey("plans.id"))
+    step_index = sqlch.Column(sqlch.Integer)
+    agent = sqlch.Column(sqlch.String(100))
+    action = sqlch.Column(sqlch.String(200))   
+    input_payload = sqlch.Column(sqlch.Text)
+    output_payload = sqlch.Column(sqlch.Text)
+    status = sqlch.Column(sqlch.String(50), default="pending") 
+    meta_data = sqlch.Column(sqlch.Text)
+    created_at = sqlch.Column(sqlch.DateTime, default=datetime.utcnow)
+
+    plan = sqlorm.relationship("PlanRecord", backref="steps")
 
 class ContextStore:
-    def __init__(self, db_path="sqlite:///data/context.db"):
-        self.engine = create_engine(db_path, connect_args={"check_same_thread": False})
+    def __init__(self, db_url=None):
+        # default db in project data directory
+        if db_url is None:
+            root = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
+            db_path = os.path.join(root, "data", "context.db")
+            db_url = f"sqlite:///{db_path}"
+
+        self.engine = sqlch.create_engine(db_url, connect_args={"check_same_thread": False})
         Base.metadata.create_all(self.engine)
-        self.Session = sessionmaker(bind=self.engine)
+        self.Session = sqlorm.sessionmaker(bind=self.engine)
 
-    def save_record(self, task_type, input_content, agent_used, output_content, metadata=None):
+    # Plans
+    def save_plan(self, input_text, plan_json, meta_data=None):
         session = self.Session()
-        metadata_json = json.dumps(metadata) if metadata else "{}"
-
-        record = TaskRecord(
-            task_type=task_type,
-            input_content=input_content,
-            agent_used=agent_used,
-            output_content=output_content,
-            metadata_json=metadata_json
+        pr = PlanRecord(
+            input_text=input_text,
+            plan_json=json.dumps(plan_json),
+            meta_data=json.dumps(meta_data or {})
         )
-        session.add(record)
+        session.add(pr)
         session.commit()
+        plan_id = pr.id
+        session.close()
+        return plan_id
+
+    def get_plan(self, plan_id):
+        session = self.Session()
+        pr = session.query(PlanRecord).filter_by(id=plan_id).first()
+        session.close()
+        if pr is None:
+            return None
+        return {
+            "id": pr.id,
+            "input_text": pr.input_text,
+            "plan_json": json.loads(pr.plan_json),
+            "meta_data": json.loads(pr.meta_data),
+            "created_at": pr.created_at.isoformat()
+        }
+
+    # Steps
+    def add_step(self, plan_id, step_index, agent, action, input_payload, meta_data=None):
+        session = self.Session()
+        sr = StepRecord(
+            plan_id=plan_id,
+            step_index=step_index,
+            agent=agent,
+            action=action,
+            input_payload=json.dumps(input_payload),
+            meta_data=json.dumps(meta_data or {}),
+            status="pending"
+        )
+        session.add(sr)
+        session.commit()
+        step_id = sr.id
+        session.close()
+        return step_id
+
+    def update_step_result(self, step_id, output_payload, status="success", meta_data=None):
+        session = self.Session()
+        sr = session.query(StepRecord).filter_by(id=step_id).first()
+        if sr:
+            sr.output_payload = json.dumps(output_payload)
+            sr.status = status
+            if meta_data:
+                sr.meta_data = json.dumps(meta_data)
+            session.commit()
         session.close()
 
-    def get_last_records(self, limit=10):
+    def get_steps_for_plan(self, plan_id):
         session = self.Session()
-        records = session.query(TaskRecord).order_by(TaskRecord.id.desc()).limit(limit).all()
-        # records = session.execute(select(TaskRecord)).scalars().all()
+        rows = session.query(StepRecord).filter_by(plan_id=plan_id).order_by(StepRecord.step_index).all()
+        out = []
+        for r in rows:
+            out.append({
+                "id": r.id,
+                "step_index": r.step_index,
+                "agent": r.agent,
+                "action": r.action,
+                "input_payload": json.loads(r.input_payload) if r.input_payload else None,
+                "output_payload": json.loads(r.output_payload) if r.output_payload else None,
+                "status": r.status,
+                "meta_data": json.loads(r.meta_data) if r.meta_data else {}
+            })
         session.close()
-        return records
+        return out
