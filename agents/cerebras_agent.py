@@ -1,4 +1,5 @@
 from llm_clients.cerebras_client import CerebrasClient
+from llm_clients.cerebras_client import getResponseText
 
 class CerebrasAgent:
     def __init__(self, name="cerebras-agent", model="llama3.1-8b"):
@@ -6,16 +7,14 @@ class CerebrasAgent:
         self.model = model
         self.client = CerebrasClient()
 
-    def run(self, prompt):
+    async def run(self, prompt):
         messages = [
+            {"role":"system", "content":"You are a helpful assistant."},
             {"role": "user", "content": prompt}
         ]
-        return self.client.generate(messages, model=self.model)
+        response = await self.client.generate(messages=messages, model=self.model)
+        return getResponseText(response)
+        
 
-    async def rewrite(self, text):
-        prompt = f"Rewrite the following text in a clearer and more concise way:\n\n{text}"
-        return self.run(prompt)
-
-    async def answer_question(self, question):
-        prompt = f"Answer the following question:\n\n{question}"
-        return self.run(prompt)
+    async def summarize(self, text):
+        return await self.run("Summarize:\n\n" + text)
